@@ -161,7 +161,8 @@ workflow chip {
 
     ### read genome data and paths
     call read_genome_tsv { input:genome_tsv = genome_tsv }
-    File bwa_idx_tar = read_genome_tsv.genome['bwa_idx_tar']
+    File star_genome_dir = read_genome_tsv.genome['star_genome_dir']
+    File spike_in_genome = read_genome_tsv.genome['spike_in_genome']
     File blacklist = read_genome_tsv.genome['blacklist']
     File chrsz = read_genome_tsv.genome['chrsz']
     String gensz = read_genome_tsv.genome['gensz']
@@ -202,7 +203,17 @@ workflow chip {
         }
         # align merged fastqs with bwa
         call star { input :
-            idx_tar = bwa_idx_tar,
+            genome_dir = star_genome_dir,
+            fastqs = trim_adapters_pe.trimmed_fastqs, #[R1,R2]
+            paired_end = paired_end,
+            cpu = bwa_cpu,
+            mem_mb = bwa_mem_mb,
+            time_hr = bwa_time_hr,
+            disks = bwa_disks,
+        }
+        # align fastqs to spike in genomes
+        call star as star_spikeIn { input :
+            genome_dir = spike_in_genome,
             fastqs = trim_adapters_pe.trimmed_fastqs, #[R1,R2]
             paired_end = paired_end,
             cpu = bwa_cpu,
@@ -225,7 +236,7 @@ workflow chip {
         else transpose([trim_fastq.trimmed_fastq])
     scatter(fastq_set in trimmed_fastqs_R1) {
         call star as star_R1 { input :
-            idx_tar = bwa_idx_tar,
+            idx_tar = star_genome_dir,
             fastqs = fastq_set,
             paired_end = false,
             cpu = bwa_cpu,
@@ -370,7 +381,7 @@ workflow chip {
         }
         # align merged fastqs with bwa
         call star as star_ctl { input :
-            idx_tar = bwa_idx_tar,
+            idx_tar = star_genome_dir,
             fastqs = merge_fastq_ctl.merged_fastqs, #[R1,R2]
             paired_end = paired_end,
             cpu = bwa_cpu,
@@ -969,7 +980,7 @@ task trim_fastq { # trim fastq (for PE R1 only)
 }
 
 task star {
-    File idx_tar 		# reference bwa index tar
+    File genome_dir 		# star genome dir
     Array[File] fastqs 	# [read_end_id]
     Boolean paired_end
 
@@ -980,7 +991,7 @@ task star {
 
     command {
         python $(which encode_star.py) \
-            ${idx_tar} \
+            ${genome_dir} \
             ${sep=' ' fastqs} \
             ${if paired_end then "--paired-end" else ""} \
             ${"--nth " + cpu}

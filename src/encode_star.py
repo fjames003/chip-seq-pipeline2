@@ -13,13 +13,8 @@ from encode_common_genomic import *
 def parse_arguments():
     parser = argparse.ArgumentParser(prog='ENCODE DCC STAR aligner.',
                                         description='')
-    parser.add_argument('STAR_index_prefix_or_tar', type=str,
-                        help='Path for prefix (or a tarball .tar) \
-                            for reference STAR index. \
-                            Prefix must be like [PREFIX].sa. \
-                            Tar ball must be packed without compression \
-                            and directory by using command line \
-                            "tar cvf [TAR] [TAR_PREFIX].*".')
+    parser.add_argument('STAR_genome_dir', type=str,
+                        help='Path for STAR genome directory')
     parser.add_argument('fastqs', nargs='+', type=str,
                         help='List of FASTQs (R1 and R2). \
                             FASTQs must be compressed with gzip (with .gz).')
@@ -65,7 +60,7 @@ def make_read_length_file(fastq, out_dir):
     return txt
 
 
-def STAR_se(fastq, nth, out_dir):
+def STAR_se(fastq, nth, out_dir, genome_dir):
     basename = os.path.basename(strip_ext_fastq(fastq))
     prefix = os.path.join(out_dir,
         strip_merge_fastqs_prefix(basename))
@@ -73,10 +68,10 @@ def STAR_se(fastq, nth, out_dir):
 
     cmd = 'STAR '
     cmd += '--runThreadN {0} '
-    cmd += '--genomeDir /home/segil_lab/genomes/gencode_mm10_genomeDir '
+    cmd += '--genomeDir {3} '
     cmd += '--readFilesCommand zcat '
     cmd += '--readFilesIn {1} '
-    cmd += '--outFileNamePrefix {2} '
+    cmd += '--outFileNamePrefix {2}_ '
     cmd += '--outSAMtype BAM SortedByCoordinate '
     cmd += '--alignEndsType EndToEnd '
     cmd += '--alignIntronMax 1 '
@@ -93,12 +88,12 @@ def STAR_se(fastq, nth, out_dir):
     cmd += '--alignMatesGapMax 0 '
     cmd += '--outSAMunmapped Within '
     cmd += '--seedSplitMin 10'
-    cmd = cmd.format(nth, fastq, prefix)
+    cmd = cmd.format(nth, fastq, prefix, genome_dir)
     run_shell_cmd(cmd)
 
     return bam
 
-def STAR_pe(fastq1, fastq2, nth, out_dir):
+def STAR_pe(fastq1, fastq2, nth, out_dir, genome_dir):
     basename = os.path.basename(strip_ext_fastq(fastq1))
     prefix = os.path.join(out_dir,
         strip_merge_fastqs_prefix(basename))
@@ -108,10 +103,10 @@ def STAR_pe(fastq1, fastq2, nth, out_dir):
 
     cmd = 'STAR '
     cmd += '--runThreadN {0} '
-    cmd += '--genomeDir /home/segil_lab/genomes/gencode_mm10_genomeDir '
+    cmd += '--genomeDir {4} '
     cmd += '--readFilesCommand zcat '
     cmd += '--readFilesIn {1} {2} '
-    cmd += '--outFileNamePrefix {3} '
+    cmd += '--outFileNamePrefix {3}_ '
     cmd += '--outSAMtype BAM SortedByCoordinate '
     cmd += '--alignEndsType EndToEnd '
     cmd += '--alignIntronMax 1 '
@@ -128,7 +123,7 @@ def STAR_pe(fastq1, fastq2, nth, out_dir):
     cmd += '--alignMatesGapMax 0 '
     cmd += '--outSAMunmapped Within '
     cmd += '--seedSplitMin 10'
-    cmd = cmd.format(nth, fastq1, fastq2, prefix)
+    cmd = cmd.format(nth, fastq1, fastq2, prefix, genome_dir)
     run_shell_cmd(cmd)
     # # multiprocessing for STAR_aln
     # pool = multiprocessing.Pool(2)
@@ -178,11 +173,10 @@ def STAR_pe(fastq1, fastq2, nth, out_dir):
     # rm_f([sai1, sai2, sam])
     return bam
 
-def chk_STAR_index(prefix):
-    index_sa = '{}.sa'.format(prefix)
-    if not os.path.exists(index_sa):
-        raise Exception("STAR index does not exists. "+
-            "Prefix = {}".format(prefix))
+def chk_STAR_genome_dir(genomeDir):
+    if not os.path.exists(genomeDir):
+        raise Exception("STAR genomeDir does not exists. "+
+            "Directory provided = {}".format(genomeDir))
 
 def main():
     # read params
@@ -202,12 +196,13 @@ def main():
         R2_read_length_file = make_read_length_file(
                             args.fastqs[1], args.out_dir)
 
+    chk_STAR_genome_dir(args.STAR_genome_dir)
     # STAR
     log.info('Running STAR...')
     if args.paired_end:
-        bam = STAR_pe(args.fastqs[0], args.fastqs[1], args.nth, args.out_dir)
+        bam = STAR_pe(args.fastqs[0], args.fastqs[1], args.nth, args.out_dir, args.STAR_genome_dir)
     else:
-        bam = STAR_se(args.fastqs[0], args.nth, args.out_dir)
+        bam = STAR_se(args.fastqs[0], args.nth, args.out_dir, args.STAR_genome_dir)
 
     # initialize multithreading
     log.info('Initializing multi-threading...')
