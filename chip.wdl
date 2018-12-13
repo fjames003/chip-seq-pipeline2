@@ -236,7 +236,7 @@ workflow chip {
         else transpose([trim_fastq.trimmed_fastq])
     scatter(fastq_set in trimmed_fastqs_R1) {
         call star as star_R1 { input :
-            idx_tar = star_genome_dir,
+            genome_dir = star_genome_dir,
             fastqs = fastq_set,
             paired_end = false,
             cpu = bwa_cpu,
@@ -381,7 +381,7 @@ workflow chip {
         }
         # align merged fastqs with bwa
         call star as star_ctl { input :
-            idx_tar = star_genome_dir,
+            genome_dir = star_genome_dir,
             fastqs = merge_fastq_ctl.merged_fastqs, #[R1,R2]
             paired_end = paired_end,
             cpu = bwa_cpu,
