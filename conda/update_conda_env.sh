@@ -2,7 +2,7 @@
 # Stop on error
 set -e
 
-CONDA_ENV=encode-chip-seq-pipeline
+CONDA_ENV=encode-chip-seq-pipeline-test
 
 SH_SCRIPT_DIR=$(cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)
 

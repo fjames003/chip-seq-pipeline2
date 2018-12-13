@@ -2,8 +2,8 @@
 # Stop on error
 set -e
 
-CONDA_ENV=encode-chip-seq-pipeline
-CONDA_ENV_PY3=encode-chip-seq-pipeline-python3
+CONDA_ENV=encode-chip-seq-pipeline-test
+CONDA_ENV_PY3=encode-chip-seq-pipeline-python3-test
 
 SH_SCRIPT_DIR=$(cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)
 
@@ -43,12 +43,12 @@ source activate ${CONDA_ENV}
   # according to cpu arch, num threads.
   # so we need to keep using numpy with MKL in the defaults repo
   # until this issue is fixed.
-  conda install numpy==1.11.3 -c defaults -y 
+  conda install numpy==1.11.3 -c defaults -y
 
   # init script for activation/deactivation.
   # limiting number of threads for BLAS is important to ensure the same output for MACS2
   # most pipeline users have their own numpy and scipy installed on their home.
-  # so we also need to set PYTHONNOUSERSITE=True to prevent python from 
+  # so we also need to set PYTHONNOUSERSITE=True to prevent python from
   # looking for external packages locally installed on user's home.
   # see https://github.com/conda/conda/issues/6018 for details
   CONDA_LIB="${CONDA_PREFIX}/lib"
@@ -87,7 +87,7 @@ source activate ${CONDA_ENV}
     chmod +rx ${PICARD_JAR}
     cd ${CONDA_PREFIX}/bin && ln -s ${PICARD_JAR}
   fi
-  
+
 source deactivate
 
 # transfer pipeline's python scripts (src/*.py) to conda env's bin directory
