@@ -69,7 +69,7 @@ def STAR_se(fastq, nth, out_dir):
     basename = os.path.basename(strip_ext_fastq(fastq))
     prefix = os.path.join(out_dir,
         strip_merge_fastqs_prefix(basename))
-    bam = '{}Aligned.sortedByCoord.out.bam'.format(prefix)
+    bam = '{}_Aligned.sortedByCoord.out.bam'.format(prefix)
 
     cmd = 'STAR '
     cmd += '--runThreadN {0} '
@@ -104,14 +104,14 @@ def STAR_pe(fastq1, fastq2, nth, out_dir):
         strip_merge_fastqs_prefix(basename))
     # sam = '{}.sam'.format(prefix)
     # badcigar = '{}.badReads'.format(prefix)
-    bam = '{}Aligned.sortedByCoord.out.bam'.format(prefix)
+    bam = '{}_Aligned.sortedByCoord.out.bam'.format(prefix)
 
     cmd = 'STAR '
-    cmd += '--runThreadN {} '
+    cmd += '--runThreadN {0} '
     cmd += '--genomeDir /home/segil_lab/genomes/gencode_mm10_genomeDir '
     cmd += '--readFilesCommand zcat '
-    cmd += '--readFilesIn {} {} '
-    cmd += '--outFileNamePrefix {} '
+    cmd += '--readFilesIn {1} {2} '
+    cmd += '--outFileNamePrefix {3} '
     cmd += '--outSAMtype BAM SortedByCoordinate '
     cmd += '--alignEndsType EndToEnd '
     cmd += '--alignIntronMax 1 '
@@ -124,11 +124,12 @@ def STAR_pe(fastq1, fastq2, nth, out_dir):
     cmd += '--outFilterScoreMinOverLread 0 '
     cmd += '--limitBAMsortRAM 26843545600 '
     cmd += '--genomeLoad LoadAndKeep '
-    cmd += '--outBAMsortingThreadN 10 '
+    cmd += '--outBAMsortingThreadN {0} '
     cmd += '--alignMatesGapMax 0 '
     cmd += '--outSAMunmapped Within '
     cmd += '--seedSplitMin 10'
     cmd = cmd.format(nth, fastq1, fastq2, prefix)
+    run_shell_cmd(cmd)
     # # multiprocessing for STAR_aln
     # pool = multiprocessing.Pool(2)
     # ret_val1 = pool.apply_async(
@@ -139,7 +140,7 @@ def STAR_pe(fastq1, fastq2, nth, out_dir):
     # sai2 = ret_val2.get(BIG_INT)
     # pool.close()
     # pool.join()
-
+    #
     # cmd = 'STAR sampe {} {} {} {} {} | gzip -nc > {}'.format(
     #     ref_index_prefix,
     #     sai1,
