@@ -32,7 +32,7 @@ def parse_flagstat_qc(txt):
     diff_chroms_qc_failed = ''
 
     with open(txt, 'r') as f:
-        for line in f:    
+        for line in f:
             if ' in total ' in line:
                 tmp1 = line.split(' in total ')
                 line1 = tmp1[0]
@@ -46,7 +46,7 @@ def parse_flagstat_qc(txt):
                 duplicates = tmp2[0]
                 duplicates_qc_failed = tmp2[1]
             if ' mapped (' in line:
-                tmp3 = line.split(' mapped (')               
+                tmp3 = line.split(' mapped (')
                 line3_1 = tmp3[0]
                 tmp3_1 = line3_1.split(' + ')
                 mapped = tmp3_1[0]
@@ -73,7 +73,7 @@ def parse_flagstat_qc(txt):
                 read2 = tmp2[0]
                 read2_qc_failed = tmp2[1]
             if ' properly paired (' in line:
-                tmp3 = line.split(' properly paired (')              
+                tmp3 = line.split(' properly paired (')
                 line3_1 = tmp3[0]
                 tmp3_1 = line3_1.split(' + ')
                 paired_properly = tmp3_1[0]
@@ -88,14 +88,14 @@ def parse_flagstat_qc(txt):
                 with_itself = tmp3_1[0]
                 with_itself_qc_failed = tmp3_1[1]
             if ' singletons (' in line:
-                tmp3 = line.split(' singletons (')               
+                tmp3 = line.split(' singletons (')
                 line3_1 = tmp3[0]
                 tmp3_1 = line3_1.split(' + ')
                 singletons = tmp3_1[0]
                 singletons_qc_failed = tmp3_1[1]
                 line3_2 = tmp3[1]
                 tmp3_2 = line3_2.split(':')
-                singletons_pct = tmp3_2[0].replace('%','')       
+                singletons_pct = tmp3_2[0].replace('%','')
             if ' with mate mapped to a different chr' in line:
                 tmp3 = line.split(' with mate mapped to a different chr')
                 line3_1 = tmp3[0]
@@ -198,7 +198,7 @@ def parse_dup_qc(txt):
     else:
         # sambamba markdup
         with open(txt, 'r') as f:
-            for line in f:    
+            for line in f:
                 if ' end pairs' in line:
                     tmp1 = line.strip().split(' ')
                     paired_reads = tmp1[1]
@@ -218,8 +218,13 @@ def parse_dup_qc(txt):
                     dupes_pct = '{0:.2f}'.format(
                                 float(unpaired_dupes)/float(unpaired_reads))
                 elif paired_reads:
-                    dupes_pct = '{0:.2f}'.format(
-                                float(paired_dupes)/float(paired_reads))
+                    # HAve issue when one of the variables is blank
+                    try:
+                        dupes_pct = '{0:.2f}'.format(
+                                    float(paired_dupes)/float(paired_reads))
+                    except Exception as e:
+                        pass
+
     if unpaired_reads:
         result['unpaired_reads'] = int(unpaired_reads)
     if paired_reads:
@@ -307,7 +312,7 @@ def parse_frip_qc(txt):
 def parse_multi_col_txt(txt):
     result = OrderedDict()
     with open(txt, 'r') as f:
-        lines = f.readlines()    
+        lines = f.readlines()
     for line in lines:
         line = line.strip().replace(' reads; of these:','')
         arr = line.split('\t')
@@ -327,14 +332,14 @@ def parse_ataqc_txt(txt): # to read ATAQC log
             else:
                 return int(s.strip())
         except ValueError:
-            return s.strip()            
+            return s.strip()
     pre_parsed = parse_multi_col_txt(txt)
     result = OrderedDict()
     for key in pre_parsed:
         val = pre_parsed[key]
         if type(val)==list:
             result[key] = [num(x) for x in val]
-        elif '- OK' in val:    
+        elif '- OK' in val:
             delim = '- OK'
             arr = val.split(delim)
             result[key] = [num(arr[0]), 'OK']
