@@ -32,10 +32,10 @@ def parse_arguments():
     parser.add_argument('--blacklist', type=str, required=True,
                         help='Blacklist BED file.')
     parser.add_argument('--keep-irregular-chr', action="store_true",
-                        help='Keep reads with non-canonical chromosome names.')    
+                        help='Keep reads with non-canonical chromosome names.')
     parser.add_argument('--out-dir', default='', type=str,
                         help='Output directory.')
-    parser.add_argument('--log-level', default='INFO', 
+    parser.add_argument('--log-level', default='INFO',
                         choices=['NOTSET','DEBUG','INFO',
                             'WARNING','CRITICAL','ERROR','CRITICAL'],
                         help='Log level')
@@ -46,7 +46,7 @@ def parse_arguments():
     log.info(sys.argv)
     return args
 
-def macs2(ta, ctl_ta, chrsz, gensz, pval_thresh, fraglen, cap_num_peak, 
+def macs2(ta, ctl_ta, chrsz, gensz, pval_thresh, fraglen, cap_num_peak,
         make_signal, out_dir):
     basename_ta = os.path.basename(strip_ext_ta(ta))
     if ctl_ta:
@@ -104,21 +104,21 @@ def macs2(ta, ctl_ta, chrsz, gensz, pval_thresh, fraglen, cap_num_peak,
         cmd3 += '-c "{}"_control_lambda.bdg '
         cmd3 += '--o-prefix "{}" -m FE '
         cmd3 = cmd3.format(
-            prefix, 
-            prefix, 
+            prefix,
+            prefix,
             prefix)
         run_shell_cmd(cmd3)
 
         cmd4 = 'bedtools slop -i "{}"_FE.bdg -g {} -b 0 | '
-        cmd4 += 'awk \'{{if ($3 != -1) print $0}}\' |'
+        cmd4 += 'awk \'{{if ($3 != -1 && $1 ~ /^chr/) print $0}}\' |'
         cmd4 += 'bedClip stdin {} {}'
         cmd4 = cmd4.format(
-            prefix, 
-            chrsz, 
-            chrsz, 
+            prefix,
+            chrsz,
+            chrsz,
             fc_bedgraph)
         run_shell_cmd(cmd4)
-      
+
         cmd5 = 'LC_COLLATE=C sort -S 4G -k1,1 -k2,2n {} > {}'
         cmd5 = cmd5.format(
             fc_bedgraph,
@@ -134,7 +134,7 @@ def macs2(ta, ctl_ta, chrsz, gensz, pval_thresh, fraglen, cap_num_peak,
 
         # sval counts the number of tags per million in the (compressed) BED file
         sval = float(get_num_lines(ta))/1000000.0
-        
+
         cmd7 = 'macs2 bdgcmp -t "{}"_treat_pileup.bdg '
         cmd7 += '-c "{}"_control_lambda.bdg '
         cmd7 += '--o-prefix {} -m ppois -S {}'
@@ -146,7 +146,7 @@ def macs2(ta, ctl_ta, chrsz, gensz, pval_thresh, fraglen, cap_num_peak,
         run_shell_cmd(cmd7)
 
         cmd8 = 'bedtools slop -i "{}"_ppois.bdg -g {} -b 0 | '
-        cmd8 += 'awk \'{{if ($3 != -1) print $0}}\' |'
+        cmd8 += 'awk \'{{if ($3 != -1 && $1 ~ /^chr/) print $0}}\' |'
         cmd8 += 'bedClip stdin {} {}'
         cmd8 = cmd8.format(
             prefix,
@@ -190,7 +190,7 @@ def main():
     log.info('Calling peaks and generating signal tracks with MACS2...')
     npeak, fc_bigwig, pval_bigwig = macs2(
         args.tas[0], args.tas[1], args.chrsz, args.gensz, args.pval_thresh,
-        args.fraglen, args.cap_num_peak, args.make_signal, 
+        args.fraglen, args.cap_num_peak, args.make_signal,
         args.out_dir)
 
     log.info('Blacklist-filtering peaks...')
