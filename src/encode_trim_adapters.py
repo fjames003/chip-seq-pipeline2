@@ -48,7 +48,7 @@ def cutadapt_se(fastq, nth, out_dir):
     cmd += '--trim-n -e 0.1 -q 30 '
     cmd += '-a GATCGGAAGAGCACACGTCTGAACTCCAGTCAC -A GATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGTATCATT '
     cmd += '-o {} '
-    cmd += '<(zcat {})'
+    cmd += '{}'
     cmd = cmd.format(nth, fastq_out, fastq1)
 
     run_shell_cmd(cmd)
@@ -69,12 +69,12 @@ def cutadapt_pe(fastq1, fastq2, nth, out_dir):
     cmd += '--trim-n -e 0.1 -q 30 '
     cmd += '-a GATCGGAAGAGCACACGTCTGAACTCCAGTCAC -A GATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGTATCATT '
     cmd += '-o {} -p {} '
-    cmd += '<(zcat {}) '
-    cmd += '<(zcat {})'
+    cmd += '{} '
+    cmd += '{}'
     cmd = cmd.format(nth, fastq_out1, fastq_out2, fastq1, fastq2)
 
     run_shell_cmd(cmd)
-    
+
     return fastq_out1, fastq_out2
 
 def main():
