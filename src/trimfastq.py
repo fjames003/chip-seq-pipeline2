@@ -1,9 +1,9 @@
 ##################################
 #                                #
-# Last modified 2017/11/08       # 
+# Last modified 2017/11/08       #
 #                                #
 # Georgi Marinov                 #
-#                                # 
+#                                #
 ##################################
 
 import sys
@@ -29,7 +29,7 @@ def run():
     if sys.argv[2] == 'max':
         doMax=True
         trim='max'
-    else: 
+    else:
         trim = int(sys.argv[2])
     outputfilename = inputfilename.split('/')[-1].split('.fastq')[0] + '.' +str(trim)+'mers.fastq'
     doFlowcellID=False
@@ -83,7 +83,7 @@ def run():
         else:
             print('will replace',  oldstring, 'with', newstring, 'in read IDs')
 
-    i=0 
+    i=0
     shorter=0
 
     if doStdOut:
@@ -147,7 +147,7 @@ def run():
                         pass
                     else:
                         print(str(j/1000000) + 'M reads processed')
-                if doMax: 
+                if doMax:
                     sequence=sequence.replace('.','N')
                 else:
                     sequence=sequence[0:trim].replace('.','N')+'\n'
@@ -193,7 +193,7 @@ def run():
                         pass
                     else:
                         print(str(j/1000000) + 'M reads processed')
-                if doMax: 
+                if doMax:
                     sequence=line
                 else:
                     if len(line.strip())<trim:
@@ -208,7 +208,7 @@ def run():
                 continue
             if i==4:
                 i=1
-                if doMax: 
+                if doMax:
                     scores=line
                     if doStdOut:
                         print(ID.strip())
@@ -241,7 +241,6 @@ def run():
     else:
         outfile.close()
 
-    if shorter>0:
-        print(shorter, 'sequences shorter than desired length')
+    # if shorter>0:
+    #     print(shorter, 'sequences shorter than desired length')
 run()
-
