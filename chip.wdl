@@ -929,6 +929,8 @@ task trim_adapters_pe { # merge trimmed fastqs
     Array[File] fastqs 	# [read_end_id]
     Boolean paired_end
 
+    Int cpu
+
     command {
         python $(which encode_trim_adapters.py) \
             ${sep=' ' fastqs} \
