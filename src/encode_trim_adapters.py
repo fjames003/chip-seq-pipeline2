@@ -55,11 +55,11 @@ def cutadapt_se(fastq, nth, out_dir):
 
 def cutadapt_pe(fastq1, fastq2, nth, out_dir):
     basename1 = os.path.basename(strip_ext_fastq(fastq1))
-    prefix1 = os.path.join(out_dir, basename)
+    prefix1 = os.path.join(out_dir, basename1)
     fastq_out1 = "{}.trimmed.fastq.gz".format(prefix1)
 
     basename2 = os.path.basename(strip_ext_fastq(fastq2))
-    prefix2 = os.path.join(out_dir, basename)
+    prefix2 = os.path.join(out_dir, basename2)
     fastq_out2 = "{}.trimmed.fastq.gz".format(prefix2)
 
     cmd =  'cutadapt -j {} '
