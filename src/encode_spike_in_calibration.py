@@ -44,7 +44,7 @@ def generate_beds(genome_bam, spike_in_bam, out_dir):
     g_prefix = os.path.join(out_dir, g_basename)
 
     s_basename = os.path.basename(strip_ext_bam(spike_in_bam))
-    s_prefix = os.path.join(out_dir, s_prefix)
+    s_prefix = os.path.join(out_dir, s_basename)
 
     genome_bed = "{}.bed".format(g_prefix)
     spike_in_bed = "{}.bed".format(s_prefix)
