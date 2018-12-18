@@ -50,7 +50,7 @@ def generate_beds(genome_bam, spike_in_bam, out_dir):
     spike_in_bed = "{}.bed".format(s_prefix)
 
     cmd =  "bedtools bamtobed -i {0} | "
-    cmd += "awk -v OFS='\t' "
+    cmd += "awk -v OFS='\\t' "
     cmd += "'{{len = $3 - $2; print $1, $2, $3, len }}' > {1}"
     cmd = cmd.format(genome_bam, genome_bed)
     run_shell_cmd(cmd)
