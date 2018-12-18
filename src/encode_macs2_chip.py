@@ -74,7 +74,7 @@ def macs2(ta, ctl_ta, chrsz, gensz, pval_thresh, fraglen, cap_num_peak,
 
     cmd0 = ' macs2 callpeak '
     cmd0 += '-t {} {} -f BED -n {} -g {} -p {} '
-    cmd0 += '--nomodel --shift {} --extsize {} --keep-dup all -B --SPMR'
+    cmd0 += '--nomodel --shift {} {} --keep-dup all -B --SPMR'
     cmd0 = cmd0.format(
         ta,
         '-c {}'.format(ctl_ta) if ctl_ta else '',
@@ -82,7 +82,7 @@ def macs2(ta, ctl_ta, chrsz, gensz, pval_thresh, fraglen, cap_num_peak,
         gensz,
         pval_thresh,
         0,
-        fraglen)
+        '--extsize {}'.format(fraglen) if fraglen > 0 else '')
     run_shell_cmd(cmd0)
 
     cmd1 = 'LC_COLLATE=C sort -k 8gr,8gr "{}"_peaks.narrowPeak | '
