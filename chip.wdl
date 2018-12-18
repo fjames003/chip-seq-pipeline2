@@ -219,7 +219,7 @@ workflow chip {
         # align fastqs to spike in genomes
         call star as star_spikeIn { input :
             genome_dir = spike_in_genome,
-            fastqs = trim_adapters_pe.trimmed_fastqs, #[R1,R2]
+            fastqs = flatten(trim_adapters_pe.trimmed_fastqs), #[R1,R2]
             paired_end = paired_end,
             cpu = bwa_cpu,
             mem_mb = bwa_mem_mb,
