@@ -19,6 +19,8 @@ def parse_arguments():
                         help='Path to bam file aligned to spike in genome')
     parser.add_argument('chrom_sizes', type=str,
                         help='Path to file containing chromosome sizes')
+    parser.add_argument('--nth', type=int, default=1,
+                        help='Number of threads to parallelize.')
     parser.add_argument('--out-dir', default='', type=str,
                             help='Output directory.')
     parser.add_argument('--log-level', default='INFO',
@@ -40,17 +42,17 @@ def parse_arguments():
     return args
 
 def generate_beds(genome_bam, spike_in_bam, out_dir):
-    g_basename = os.path.basename(strip_ext_bam(genome_bam))
+    g_basename = "Aligned_to_primary_genome"
     g_prefix = os.path.join(out_dir, g_basename)
 
-    s_basename = os.path.basename(strip_ext_bam(spike_in_bam))
+    s_basename = "Aligned_to_spikeIn_genome"
     s_prefix = os.path.join(out_dir, s_basename)
 
     genome_bed = "{}.bed".format(g_prefix)
     spike_in_bed = "{}.bed".format(s_prefix)
 
     cmd =  "bedtools bamtobed -i {0} | "
-    cmd += "awk -v OFS='\\t' "
+    cmd += "awk -v OFS=\"\\t\" "
     cmd += "'{{len = $3 - $2; print $1, $2, $3, len }}' > {1}"
     cmd = cmd.format(genome_bam, genome_bed)
     run_shell_cmd(cmd)
