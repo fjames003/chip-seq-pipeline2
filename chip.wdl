@@ -133,6 +133,7 @@ workflow chip {
 
     ### other input types (bam, nodup_bam, ta)
     Array[File] bams = [] 			# [rep_id]
+    Array[File] spike_in_bams = []  # [rep_id]
     Array[File] ctl_bams = [] 		# [rep_id]
     Array[File] nodup_bams = [] 	# [rep_id]
     Array[File] ctl_nodup_bams = [] # [rep_id]
@@ -161,8 +162,8 @@ workflow chip {
 
     ### read genome data and paths
     call read_genome_tsv { input:genome_tsv = genome_tsv }
-    File star_genome_dir = read_genome_tsv.genome['star_genome_dir']
-    File spike_in_genome = read_genome_tsv.genome['spike_in_genome']
+    String star_genome_dir = read_genome_tsv.genome['star_genome_dir']
+    String spike_in_genome = read_genome_tsv.genome['spike_in_genome']
     File blacklist = read_genome_tsv.genome['blacklist']
     File chrsz = read_genome_tsv.genome['chrsz']
     String gensz = read_genome_tsv.genome['gensz']
@@ -220,6 +221,17 @@ workflow chip {
             mem_mb = bwa_mem_mb,
             time_hr = bwa_time_hr,
             disks = bwa_disks,
+        }
+    }
+
+    # Run spike in calibration
+    Array[Pair[File, File]] genome_and_spiked = zip(flatten([star.bam, bams]),
+                                                    flatten([star_spikeIn.bam, spike_in_bams]))
+    scatter(bam_combo in genome_and_spiked) {
+        call spike_in_calibration { input :
+            genome_bam = bam_combo.left,
+            spike_in_bam = bam_combo.right,
+            chrom_sizes = chrsz,
         }
     }
 
@@ -980,7 +992,7 @@ task trim_fastq { # trim fastq (for PE R1 only)
 }
 
 task star {
-    File genome_dir 		# star genome dir
+    String genome_dir 		# star genome dir
     Array[File] fastqs 	# [read_end_id]
     Boolean paired_end
 
@@ -1007,6 +1019,28 @@ task star {
         time : time_hr
         disks : disks
         preemptible: 0
+    }
+}
+
+task spike_in_calibration {
+    File genome_bam
+    File spike_in_bam
+    File chrom_sizes
+
+    command {
+        bash $(which encode_spike_in_calibration.py) \
+            ${genome_bam} \
+            ${spike_in_bam} \
+            ${chrom_sizes}
+    }
+    output {
+        File bedgraph = glob("*.bedgraph")[0]
+    }
+    runtime {
+        cpu : 1
+        memory : "8000 MB"
+        time : 1
+        disks : "local-disk 50 HDD"
     }
 }
 
