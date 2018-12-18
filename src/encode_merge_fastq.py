@@ -23,7 +23,7 @@ def parse_arguments(debug=False):
                         help='Number of threads to parallelize.')
     parser.add_argument('--out-dir', default='', type=str,
                             help='Output directory.')
-    parser.add_argument('--log-level', default='INFO', 
+    parser.add_argument('--log-level', default='INFO',
                         choices=['NOTSET','DEBUG','INFO',
                             'WARNING','CRITICAL','ERROR','CRITICAL'],
                         help='Log level')
@@ -42,7 +42,7 @@ def parse_arguments(debug=False):
         if not args.paired_end and len(fastqs)!=1:
             raise argparse.ArgumentTypeError(
                 'Need 1 fastq per replicate for single end.')
-            
+
     log.setLevel(args.log_level)
     log.info(sys.argv)
     return args
