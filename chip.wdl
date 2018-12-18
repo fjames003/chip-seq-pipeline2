@@ -212,6 +212,10 @@ workflow chip {
             time_hr = bwa_time_hr,
             disks = bwa_disks,
         }
+    }
+
+    # Needed in its own scatter otherwise runs in parallel with other star
+    scatter(fastq_set in fastqs_) {
         # align fastqs to spike in genomes
         call star as star_spikeIn { input :
             genome_dir = spike_in_genome,
@@ -1028,7 +1032,7 @@ task spike_in_calibration {
     File chrom_sizes
 
     command {
-        bash $(which encode_spike_in_calibration.py) \
+        python $(which encode_spike_in_calibration.py) \
             ${genome_bam} \
             ${spike_in_bam} \
             ${chrom_sizes}
