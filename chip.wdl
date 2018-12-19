@@ -215,8 +215,8 @@ workflow chip {
     }
 
     # Needed in its own scatter otherwise runs in parallel with other star
-    Array[Array[File]] fastqs_merged = if !paired_end then [] else merge_fastq.merged_fastqs
-    scatter(fastq_set in fastqs_merged) {
+    Array[Array[File]] fastqs_trimmed = if !paired_end then [] else trim_adapters_pe.trimmed_fastqs
+    scatter(fastq_set in fastqs_trimmed) {
         # align fastqs to spike in genomes
         call star as star_spikeIn { input :
             genome_dir = spike_in_genome,
