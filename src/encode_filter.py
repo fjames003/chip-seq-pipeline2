@@ -16,7 +16,7 @@ def parse_arguments():
                         help='Path for raw BAM file.')
     parser.add_argument('--dup-marker', type=str, choices=['picard','sambamba'],
                         default='picard',
-                        help='Dupe marker for filtering mapped reads in BAM.')    
+                        help='Dupe marker for filtering mapped reads in BAM.')
     parser.add_argument('--mapq-thresh', default=30, type=int,
                         help='Threshold for low MAPQ reads removal.')
     parser.add_argument('--no-dup-removal', action="store_true",
@@ -29,7 +29,7 @@ def parse_arguments():
                         help='Number of threads to parallelize.')
     parser.add_argument('--out-dir', default='', type=str,
                             help='Output directory.')
-    parser.add_argument('--log-level', default='INFO', 
+    parser.add_argument('--log-level', default='INFO',
                         choices=['NOTSET','DEBUG','INFO',
                             'WARNING','CRITICAL','ERROR','CRITICAL'],
                         help='Log level')
@@ -44,7 +44,7 @@ def rm_unmapped_lowq_reads_se(bam, multimapping, mapq_thresh, nth, out_dir):
         os.path.basename(strip_ext_bam(bam)))
     filt_bam = '{}.filt.bam'.format(prefix)
 
-    if multimapping:        
+    if multimapping:
         # qname_sort_bam = samtools_name_sort(bam, nth, out_dir)
         qname_sort_bam = sambamba_name_sort(bam, nth, out_dir)
 
@@ -160,7 +160,7 @@ def mark_dup_picard(bam, out_dir): # shared by both se and pe
     prefix = os.path.join(out_dir,
         os.path.basename(strip_ext_bam(bam)))
     # strip extension appended in the previous step
-    prefix = strip_ext(prefix,'filt') 
+    prefix = strip_ext(prefix,'filt')
     dupmark_bam = '{}.dupmark.bam'.format(prefix)
     dup_qc = '{}.dup.qc'.format(prefix)
 
@@ -183,9 +183,9 @@ def mark_dup_sambamba(bam, nth, out_dir): # shared by both se and pe
     prefix = os.path.join(out_dir,
         os.path.basename(strip_ext_bam(bam)))
     # strip extension appended in the previous step
-    prefix = strip_ext(prefix,'filt') 
+    prefix = strip_ext(prefix,'filt')
     dupmark_bam = '{}.dupmark.bam'.format(prefix)
-    dup_qc = '{}.dup.qc'
+    dup_qc = '{}.dup.qc'.format(prefix)
 
     cmd = 'sambamba markdup -t {} --hash-table-size=17592186044416 '
     cmd += '--overflow-list-size=20000000 '
@@ -202,7 +202,7 @@ def rm_dup_se(dupmark_bam, nth, out_dir):
     prefix = os.path.join(out_dir,
         os.path.basename(strip_ext_bam(dupmark_bam)))
     # strip extension appended in the previous step
-    prefix = strip_ext(prefix,'dupmark') 
+    prefix = strip_ext(prefix,'dupmark')
     nodup_bam = '{}.nodup.bam'.format(prefix)
 
     cmd1 = 'samtools view -@ {} -F 1804 -b {} > {}'
@@ -217,7 +217,7 @@ def rm_dup_pe(dupmark_bam, nth, out_dir):
     prefix = os.path.join(out_dir,
         os.path.basename(strip_ext_bam(dupmark_bam)))
     # strip extension appended in the previous step
-    prefix = strip_ext(prefix,'dupmark') 
+    prefix = strip_ext(prefix,'dupmark')
     nodup_bam = '{}.nodup.bam'.format(prefix)
 
     cmd1 = 'samtools view -@ {} -F 1804 -f 2 -b {} > {}'
@@ -232,7 +232,7 @@ def pbc_qc_se(bam, out_dir):
     prefix = os.path.join(out_dir,
         os.path.basename(strip_ext_bam(bam)))
     # strip extension appended in the previous step
-    prefix = strip_ext(prefix,'dupmark') 
+    prefix = strip_ext(prefix,'dupmark')
     pbc_qc = '{}.pbc.qc'.format(prefix)
 
     cmd2 = 'bedtools bamtobed -i {} | '
@@ -271,14 +271,14 @@ def pbc_qc_pe(bam, nth, out_dir):
     rm_f(nmsrt_bam)
     return pbc_qc
 
-# if --no-dup-removal is on, 
-# Cromwell/WDL wants to have a empty file 
+# if --no-dup-removal is on,
+# Cromwell/WDL wants to have a empty file
 # for output { File pbc_qc, File dup_qc }
 
 def make_mito_dup_log(dupmark_bam, out_dir):
-    prefix = os.path.join(out_dir, os.path.basename(strip_ext_bam(dupmark_bam)))    
+    prefix = os.path.join(out_dir, os.path.basename(strip_ext_bam(dupmark_bam)))
     mito_dup_log = '{}.mito_dup.txt'.format(prefix)
-    
+
     # Get the mitochondrial reads that are marked duplicates
     # cmd1 = 'echo -e "mito_dups\\t$(samtools view -f 1024 -c {} chrM)" > {}'.format(dupmark_bam, mito_dup_log)
     cmd1 = 'printf "mito_dups\\t$(samtools view -f 1024 -c {} chrM)\\n" > {}'.format(dupmark_bam, mito_dup_log)
@@ -306,15 +306,15 @@ def main():
     log.info('Removing unmapped/low-quality reads...')
     if args.paired_end:
         filt_bam = rm_unmapped_lowq_reads_pe(
-                args.bam, args.multimapping, args.mapq_thresh, 
+                args.bam, args.multimapping, args.mapq_thresh,
                 args.nth, args.out_dir)
     else:
         filt_bam = rm_unmapped_lowq_reads_se(
-                args.bam, args.multimapping, args.mapq_thresh, 
+                args.bam, args.multimapping, args.mapq_thresh,
                 args.nth, args.out_dir)
 
     if args.no_dup_removal:
-        nodup_bam = filt_bam        
+        nodup_bam = filt_bam
     else:
         log.info('Marking dupes with {}...'.format(args.dup_marker))
         if args.dup_marker=='picard':
@@ -346,13 +346,13 @@ def main():
     pool = multiprocessing.Pool(num_process)
 
     # log.info('samtools index...')
-    # ret_val_1 = pool.apply_async(samtools_index, 
+    # ret_val_1 = pool.apply_async(samtools_index,
     #                             (nodup_bam, args.out_dir))
     # log.info('samtools flagstat...')
     # ret_val_2 = pool.apply_async(samtools_flagstat,
     #                             (nodup_bam, args.out_dir))
     log.info('sambamba index...')
-    ret_val_1 = pool.apply_async(sambamba_index, 
+    ret_val_1 = pool.apply_async(sambamba_index,
                                 (nodup_bam, args.nth, args.out_dir))
     log.info('sambamba flagstat...')
     ret_val_2 = pool.apply_async(sambamba_flagstat,
@@ -368,7 +368,7 @@ def main():
         else:
             ret_val_3 = pool.apply_async(pbc_qc_se,
                             (dupmark_bam, args.out_dir))
-            
+
     # gather
     nodup_bai = ret_val_1.get(BIG_INT)
     nodup_flagstat_qc = ret_val_2.get(BIG_INT)
