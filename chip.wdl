@@ -2,6 +2,7 @@
 # Author: Jin Lee (leepc12@gmail.com)
 
 workflow chip {
+    String pipeline_ver = 'v1.1.5'
     ### sample name, description
     String title = 'Untitled'
     String description = 'No description'
@@ -21,7 +22,7 @@ workflow chip {
                                     # overlap and idr will also be disabled
     Boolean disable_fingerprint = false # no JSD plot generation (deeptools fingerprint)
 
-    Int trim_bp = 50 				# for cross-correlation analysis only
+    Int xcor_pe_trim_bp = 50 		# for cross-correlation analysis only (R1 of paired-end fastqs)
 
     String dup_marker = 'picard'	# picard.jar MarkDuplicates (picard) or
                                     # sambamba markdup (sambamba)
@@ -246,7 +247,7 @@ workflow chip {
         # for paired end dataset, map R1 only as SE for xcor analysis
         call trim_fastq { input :
             fastq = fastq_set[0],
-            trim_bp = trim_bp,
+            trim_bp = xcor_pe_trim_bp,
         }
     }
     Array[Array[File]] trimmed_fastqs_R1 = if length(trim_fastq.trimmed_fastq)<1 then []
@@ -871,8 +872,10 @@ workflow chip {
     }
     # Generate final QC report and JSON
     call qc_report { input :
+        pipeline_ver = pipeline_ver,
         title = title,
         description = description,
+        genome = basename(genome_tsv),
         paired_end = paired_end,
         pipeline_type = pipeline_type,
         peak_caller = peak_caller_,
@@ -922,7 +925,7 @@ workflow chip {
     output {
         File report = qc_report.report
         File qc_json = qc_report.qc_json
-        Boolean qc_json_match = qc_report.qc_json_match
+        Boolean qc_json_ref_match = qc_report.qc_json_ref_match
     }
 }
 
@@ -1065,6 +1068,8 @@ task filter {
     String disks
 
     command {
+        ${if no_dup_removal then "touch null.dup.qc null.pbc.qc; " else ""}
+        touch null
         python $(which encode_filter.py) \
             ${bam} \
             ${if paired_end then "--paired-end" else ""} \
@@ -1073,9 +1078,6 @@ task filter {
             ${"--mapq-thresh " + mapq_thresh} \
             ${if no_dup_removal then "--no-dup-removal" else ""} \
             ${"--nth " + cpu}
-        # ugly part to deal with optional outputs with Google JES backend
-        ${if no_dup_removal then "touch null.dup.qc null.pbc.qc; " else ""}
-        touch null
     }
     output {
         File nodup_bam = glob("*.bam")[0]
@@ -1271,6 +1273,9 @@ task macs2 {
     String disks
 
     command {
+        ${if make_signal then ""
+            else "touch null.pval.signal.bigwig null.fc.signal.bigwig"}
+        touch null
         python $(which encode_macs2_chip.py) \
             ${sep=' ' tas} \
             ${"--gensz "+ gensz} \
@@ -1281,10 +1286,6 @@ task macs2 {
             ${if make_signal then "--make-signal" else ""} \
             ${if keep_irregular_chr_in_bfilt_peak then "--keep-irregular-chr" else ""} \
             ${"--blacklist "+ blacklist}
-
-        ${if make_signal then ""
-            else "touch null.pval.signal.bigwig null.fc.signal.bigwig"}
-        touch null # ugly part to deal with optional outputs
     }
     output {
         File npeak = glob("*[!.][!b][!f][!i][!l][!t].narrowPeak.gz")[0]
@@ -1358,6 +1359,8 @@ task idr {
     String rank
 
     command {
+        ${if defined(ta) then "" else "touch null.frip.qc"}
+        touch null
         python $(which encode_idr.py) \
             ${peak1} ${peak2} ${peak_pooled} \
             ${"--prefix " + prefix} \
@@ -1369,9 +1372,6 @@ task idr {
             ${"--blacklist "+ blacklist} \
             ${if keep_irregular_chr_in_bfilt_peak then "--keep-irregular-chr" else ""} \
             ${"--ta " + ta}
-        # ugly part to deal with optional outputs with Google backend
-        ${if defined(ta) then "" else "touch null.frip.qc"}
-        touch null
     }
     output {
         File idr_peak = glob("*[!.][!b][!f][!i][!l][!t]."+peak_type+".gz")[0]
@@ -1405,6 +1405,8 @@ task overlap {
     String peak_type
 
     command {
+        ${if defined(ta) then "" else "touch null.frip.qc"}
+        touch null
         python $(which encode_naive_overlap.py) \
             ${peak1} ${peak2} ${peak_pooled} \
             ${"--prefix " + prefix} \
@@ -1415,10 +1417,6 @@ task overlap {
             --nonamecheck \
             ${if keep_irregular_chr_in_bfilt_peak then "--keep-irregular-chr" else ""} \
             ${"--ta " + ta}
-
-        # ugly part to deal with optional outputs with Google backend
-        ${if defined(ta) then "" else "touch null.frip.qc"}
-        touch null
     }
     output {
         File overlap_peak = glob("*[!.][!b][!f][!i][!l][!t]."+peak_type+".gz")[0]
@@ -1463,7 +1461,7 @@ task reproducibility {
         File optimal_peak_bb = glob("optimal_peak.*.bb")[0]
         File conservative_peak_bb = glob("conservative_peak.*.bb")[0]
         Array[File] optimal_peak_hammock = glob("optimal_peak.*.hammock.gz*")
-        Array[File] conservative_peak_hammock = glob("conservative_peak.*.hammock_gz*")
+        Array[File] conservative_peak_hammock = glob("conservative_peak.*.hammock.gz*")
         File reproducibility_qc = glob("*reproducibility.qc")[0]
     }
     runtime {
@@ -1479,8 +1477,10 @@ task reproducibility {
 # - qc.json		: all QCs
 task qc_report {
     # optional metadata
+    String pipeline_ver
      String title # name of sample
     String description # description for sample
+    String? genome
     #String? encode_accession_id	# ENCODE accession ID of sample
     # workflow params
     Boolean paired_end
@@ -1530,8 +1530,10 @@ task qc_report {
 
     command {
         python $(which encode_qc_report.py) \
-            ${"--name '" + sub(title,"'","_") + "'"} \
+            ${"--pipeline-ver " + pipeline_ver} \
+            ${"--title '" + sub(title,"'","_") + "'"} \
             ${"--desc '" + sub(description,"'","_") + "'"} \
+            ${"--genome " + genome} \
             ${"--multimapping " + 0} \
             ${if paired_end then "--paired-end" else ""} \
             --pipeline-type ${pipeline_type} \
@@ -1575,14 +1577,13 @@ task qc_report {
             ${"--idr-reproducibility-qc " + idr_reproducibility_qc} \
             ${"--overlap-reproducibility-qc " + overlap_reproducibility_qc} \
             --out-qc-html qc.html \
-            --out-qc-json qc.json
-
-        diff qc.json ${if defined(qc_json_ref) then qc_json_ref else "/dev/null"} | wc -l > qc_json_match.txt
+            --out-qc-json qc.json \
+            ${"--qc-json-ref " + qc_json_ref}
     }
     output {
         File report = glob('*qc.html')[0]
         File qc_json = glob('*qc.json')[0]
-        Boolean qc_json_match = read_int("qc_json_match.txt")==0
+        Boolean qc_json_ref_match = read_string("qc_json_ref_match.txt")=="True"
     }
     runtime {
         cpu : 1
