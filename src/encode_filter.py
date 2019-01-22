@@ -290,6 +290,24 @@ def make_mito_dup_log(dupmark_bam, out_dir):
 
     return mito_dup_log
 
+def dedup_umi_tools(bam, out_dir):
+    prefix = os.path.join(out_dir,
+        os.path.basename(strip_ext_bam(bam)))
+    # strip extension appended in the previous step
+    prefix = strip_ext(prefix,'filt')
+    dup_qc = '{}.dup.qc'.format(prefix)
+    umi_log = '{}.umi.log'.format(prefix)
+    nodup_bam = '{}.nodup.bam'.format(prefix)
+
+    cmd = 'umi_tools dedup -I {} -S {} -L {} --output-stats={} --paired'
+    cmd = cmd.format(
+        bam,
+        nodup_bam,
+        umi_log,
+        dup_qc)
+    run_shell_cmd(cmd)
+    return nodup_bam, dup_qc
+
 def main():
     # filt_bam - dupmark_bam - nodup_bam
     #          \ dup_qc      \ pbc_qc
@@ -323,21 +341,28 @@ def main():
         elif args.dup_marker=='sambamba':
             dupmark_bam, dup_qc = mark_dup_sambamba(
                                 filt_bam, args.nth, args.out_dir)
+        elif args.dup_marker=='umi_tools':
+            dupmark_bam, dup_qc = dedup_umi_tools(filt_bam, args.out_dir)
         else:
             raise argparse.ArgumentTypeError(
             'Unsupported --dup-marker {}'.format(args.dup_marker))
         temp_files.append(filt_bam)
 
         log.info('Removing dupes...')
-        if args.paired_end:
-            nodup_bam = rm_dup_pe(
-                        dupmark_bam, args.nth, args.out_dir)
+        if args.dup_marker != 'umi_tools':
+            if args.paired_end:
+                nodup_bam = rm_dup_pe(
+                            dupmark_bam, args.nth, args.out_dir)
+            else:
+                nodup_bam = rm_dup_se(
+                            dupmark_bam, args.nth, args.out_dir)
+            # At this stage dupmark_bam is nodup_bam if using umi_tools
+            samtools_index(dupmark_bam)
+            temp_files.append(dupmark_bam)
+            temp_files.append(dupmark_bam+'.bai')
         else:
-            nodup_bam = rm_dup_se(
-                        dupmark_bam, args.nth, args.out_dir)
-        samtools_index(dupmark_bam)
-        temp_files.append(dupmark_bam)
-        temp_files.append(dupmark_bam+'.bai')
+            nodup_bam = dupmark_bam
+            samtools_index(dupmark_bam)
 
     # initialize multithreading
     log.info('Initializing multi-threading...')
