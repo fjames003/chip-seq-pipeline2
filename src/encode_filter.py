@@ -303,8 +303,8 @@ def dedup_umi_tools(bam, out_dir):
     cmd = cmd.format(
         bam,
         nodup_bam,
-        umi_log,
-        dup_qc)
+        dup_qc,
+        umi_log)
     run_shell_cmd(cmd)
     return nodup_bam, dup_qc
 
