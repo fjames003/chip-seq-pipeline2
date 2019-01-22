@@ -14,7 +14,7 @@ def parse_arguments():
                                         description='')
     parser.add_argument('bam', type=str,
                         help='Path for raw BAM file.')
-    parser.add_argument('--dup-marker', type=str, choices=['picard','sambamba'],
+    parser.add_argument('--dup-marker', type=str, choices=['picard','sambamba', 'umi_tools'],
                         default='picard',
                         help='Dupe marker for filtering mapped reads in BAM.')
     parser.add_argument('--mapq-thresh', default=30, type=int,
