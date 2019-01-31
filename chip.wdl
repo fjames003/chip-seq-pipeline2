@@ -22,9 +22,11 @@ workflow chip {
                                     # overlap and idr will also be disabled
     Boolean disable_fingerprint = false # no JSD plot generation (deeptools fingerprint)
 
-    Int xcor_pe_trim_bp = 50 		# for cross-correlation analysis only (R1 of paired-end fastqs)
+    Boolean disable_spike_in_calibration = false    # disable all analysis related to a spike in (for ATM_ChIP)
 
-    String dup_marker = 'picard'	# picard.jar MarkDuplicates (picard) or
+    Int xcor_pe_trim_bp = 36 		# for cross-correlation analysis only (R1 of paired-end fastqs)
+
+    String dup_marker = 'sambamba'	# picard.jar MarkDuplicates (picard) or
                                     # sambamba markdup (sambamba)
     Int mapq_thresh = 30			# threshold for low MAPQ reads removal
     Boolean no_dup_removal = false	# no dupe reads removal when filtering BAM
@@ -215,30 +217,34 @@ workflow chip {
         }
     }
 
-    # Needed in its own scatter otherwise runs in parallel with other star
-    Array[Array[File]] fastqs_trimmed = if !paired_end then [] else trim_adapters_pe.trimmed_fastqs
-    scatter(fastq_set in fastqs_trimmed) {
-        # align fastqs to spike in genomes
-        call star as star_spikeIn { input :
-            genome_dir = spike_in_genome,
-            fastqs = fastq_set, #[R1,R2]
-            paired_end = paired_end,
-            cpu = bwa_cpu,
-            mem_mb = bwa_mem_mb,
-            time_hr = bwa_time_hr,
-            disks = bwa_disks,
+    if ( !disable_spike_in_calibration ) {
+        # Needed in its own scatter otherwise runs in parallel with other star
+        Array[Array[File]] fastqs_trimmed = if !paired_end then [] else trim_adapters_pe.trimmed_fastqs
+        Array[Pair[Array[File], Array[File]]] trimmed_post_star = zip(fastqs_trimmed, star.bam)
+        scatter(fastq_set in trimmed_post_star) {
+            # align fastqs to spike in genomes
+            call star as star_spikeIn { input :
+                genome_dir = spike_in_genome,
+                fastqs = fastq_set.left, #[R1,R2]
+                paired_end = paired_end,
+                cpu = bwa_cpu,
+                mem_mb = bwa_mem_mb,
+                time_hr = bwa_time_hr,
+                disks = bwa_disks,
+            }
         }
-    }
 
-    # Run spike in calibration
-    Array[Pair[File, File]] genome_and_spiked = zip(flatten([star.bam, bams]),
-                                                    flatten([star_spikeIn.bam, spike_in_bams]))
-    scatter(bam_combo in genome_and_spiked) {
-        call spike_in_calibration { input :
-            genome_bam = bam_combo.left,
-            spike_in_bam = bam_combo.right,
-            chrom_sizes = chrsz,
+        # Run spike in calibration
+        Array[Pair[File, File]] genome_and_spiked = zip(flatten([star.bam, bams]),
+                                                        flatten([star_spikeIn.bam, spike_in_bams]))
+        scatter(bam_combo in genome_and_spiked) {
+            call spike_in_calibration { input :
+                genome_bam = bam_combo.left,
+                spike_in_bam = bam_combo.right,
+                chrom_sizes = chrsz,
+            }
         }
+
     }
 
     # special treatment for xcor for paired end samples only
