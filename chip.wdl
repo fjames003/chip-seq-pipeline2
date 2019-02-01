@@ -33,7 +33,7 @@ workflow chip {
                                     # dup.qc and pbc.qc will be empty files
                                     # and nodup_bam in the output is
                                     # filtered bam with dupes
-
+    String mito_chr_name = 'chrM' 	# name of mito chromosome. THIS IS NOT A REG-EX! you can define only one chromosome name for mito.
     String regex_filter_reads = 'chrM' 	# Perl-style regular expression pattern for chr name to filter out reads
                                     # those reads will be excluded from peak calling
     Int subsample_reads = 0			# number of reads to subsample TAGALIGN
