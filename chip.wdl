@@ -841,7 +841,7 @@ workflow chip {
     }
 
     Array[File] peaks_pr1_ = flatten(select_all([spp_pr1.rpeak, macs2_pr1.npeak, peaks_pr1]))
-    Array[File] peaks_pr2_ = flatten(select_all([spp_pr2.rpeak, macs2_pr2.npeak, peaks_pr2])
+    Array[File] peaks_pr2_ = flatten(select_all([spp_pr2.rpeak, macs2_pr2.npeak, peaks_pr2]))
     #Array[File] peaks_pr1_ = if align_only then []
     #	else if peak_caller=='spp' then flatten(select_all([spp_pr1.rpeak, peaks_pr1]))
     #	else if peak_caller=='macs2' then flatten(select_all([macs2_pr1.npeak, peaks_pr1]))
