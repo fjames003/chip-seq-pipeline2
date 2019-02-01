@@ -59,10 +59,10 @@ workflow chip {
     Int spp_cap_num_peak = 300000	# cap number of raw peaks called from SPP
 
     ### resources
-    Int bwa_cpu = 4
-    Int bwa_mem_mb = 20000
-    Int bwa_time_hr = 48
-    String bwa_disks = "local-disk 100 HDD"
+    Int star_cpu = 4
+    Int star_mem_mb = 20000
+    Int star_time_hr = 48
+    String star_disks = "local-disk 100 HDD"
 
     Int filter_cpu = 2
     Int filter_mem_mb = 20000
@@ -240,17 +240,17 @@ workflow chip {
         call trim_adapters_pe { input :
             fastqs = merge_fastq.merged_fastqs, #[R1,R2],
             paired_end = paired_end,
-            cpu = bwa_cpu
+            cpu = star_cpu
         }
-        # align merged fastqs with bwa
+        # align merged fastqs with star
         call star { input :
             genome_dir = star_genome_dir,
             fastqs = trim_adapters_pe.trimmed_fastqs, #[R1,R2]
             paired_end = paired_end,
-            cpu = bwa_cpu,
-            mem_mb = bwa_mem_mb,
-            time_hr = bwa_time_hr,
-            disks = bwa_disks,
+            cpu = star_cpu,
+            mem_mb = star_mem_mb,
+            time_hr = star_time_hr,
+            disks = star_disks,
         }
     }
 
@@ -264,10 +264,10 @@ workflow chip {
                 genome_dir = spike_in_genome,
                 fastqs = fastq_set.left, #[R1,R2]
                 paired_end = paired_end,
-                cpu = bwa_cpu,
-                mem_mb = bwa_mem_mb,
-                time_hr = bwa_time_hr,
-                disks = bwa_disks,
+                cpu = star_cpu,
+                mem_mb = star_mem_mb,
+                time_hr = star_time_hr,
+                disks = star_disks,
             }
         }
 
@@ -300,10 +300,10 @@ workflow chip {
             genome_dir = star_genome_dir,
             fastqs = fastq_set,
             paired_end = false,
-            cpu = bwa_cpu,
-            mem_mb = bwa_mem_mb,
-            time_hr = bwa_time_hr,
-            disks = bwa_disks,
+            cpu = star_cpu,
+            mem_mb = star_mem_mb,
+            time_hr = star_time_hr,
+            disks = star_disks,
         }
         # no bam filtering for xcor
         call bam2ta as bam2ta_no_filt_R1 { input :
@@ -452,15 +452,15 @@ workflow chip {
             fastqs = fastq_set,
             paired_end = paired_end,
         }
-        # align merged fastqs with bwa
+        # align merged fastqs with star
         call star as star_ctl { input :
             genome_dir = star_genome_dir,
             fastqs = merge_fastq_ctl.merged_fastqs, #[R1,R2]
             paired_end = paired_end,
-            cpu = bwa_cpu,
-            mem_mb = bwa_mem_mb,
-            time_hr = bwa_time_hr,
-            disks = bwa_disks,
+            cpu = star_cpu,
+            mem_mb = star_mem_mb,
+            time_hr = star_time_hr,
+            disks = star_disks,
         }
     }
 
@@ -943,12 +943,12 @@ workflow chip {
         }
     }
 
-    Array[File] flagstat_qcs_ = flatten([flagstat_qcs, bwa.flagstat_qc])
+    Array[File] flagstat_qcs_ = flatten([flagstat_qcs, star.flagstat_qc])
     Array[File] pbc_qcs_ = flatten([pbc_qcs, filter.pbc_qc])
     Array[File] dup_qcs_ = flatten([dup_qcs, filter.dup_qc])
     Array[File] nodup_flagstat_qcs_ = flatten([nodup_flagstat_qcs, filter.flagstat_qc])
 
-    Array[File] ctl_flagstat_qcs_ = flatten([ctl_flagstat_qcs, bwa_ctl.flagstat_qc])
+    Array[File] ctl_flagstat_qcs_ = flatten([ctl_flagstat_qcs, star_ctl.flagstat_qc])
     Array[File] ctl_pbc_qcs_ = flatten([ctl_pbc_qcs, filter_ctl.pbc_qc])
     Array[File] ctl_dup_qcs_ = flatten([ctl_dup_qcs, filter_ctl.dup_qc])
     Array[File] ctl_nodup_flagstat_qcs_ = flatten([ctl_nodup_flagstat_qcs, filter_ctl.flagstat_qc])
