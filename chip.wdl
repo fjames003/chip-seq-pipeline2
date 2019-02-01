@@ -257,7 +257,7 @@ workflow chip {
     if ( !disable_spike_in_calibration ) {
         # Needed in its own scatter otherwise runs in parallel with other star
         Array[Array[File]] fastqs_trimmed = if !paired_end then [] else trim_adapters_pe.trimmed_fastqs
-        Array[Pair[Array[File], Array[File]]] trimmed_post_star = zip(fastqs_trimmed, star.bam)
+        Array[Pair[Array[File], File]] trimmed_post_star = zip(fastqs_trimmed, star.bam)
         scatter(fastq_set in trimmed_post_star) {
             # align fastqs to spike in genomes
             call star as star_spikeIn { input :
