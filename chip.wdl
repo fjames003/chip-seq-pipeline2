@@ -201,6 +201,7 @@ workflow chip {
     File blacklist = read_genome_tsv.genome['blacklist']
     File chrsz = read_genome_tsv.genome['chrsz']
     String gensz = read_genome_tsv.genome['gensz']
+    File screen_conf = read_genome_tsv.genome['fastq_screen']
 
     ### pipeline starts here
     # temporary 2-dim arrays for DNANexus style fastqs
@@ -235,6 +236,13 @@ workflow chip {
         call merge_fastq { input :
             fastqs = fastq_set,
             paired_end = paired_end,
+        }
+        # call fastq screen
+        call fastq_screen { input:
+            fastqs = merge_fastq.merged_fastqs,
+            paired_end = paired_end,
+            cpu = star_cpu,
+            conf = screen_conf
         }
         # trim fastqs with cutadapt
         call trim_adapters_pe { input :
@@ -1067,6 +1075,32 @@ task trim_adapters_pe { # merge trimmed fastqs
     }
     output {
         Array[File] trimmed_fastqs = glob("merge_fastqs_R?_*.trimmed.fastq.gz")
+    }
+    runtime {
+        cpu : cpu
+        memory : "8000 MB"
+        time : 2
+        disks : "local-disk 100 HDD"
+    }
+}
+
+task fastq_screen { # merge trimmed fastqs
+    Array[File] fastqs 	# [read_end_id]
+    Boolean paired_end
+    File conf
+    Int cpu
+
+    command {
+        python $(which encode_fastq_screen.py) \
+            ${sep=' ' fastqs} \
+            ${if paired_end then "--paired-end" else ""} \
+            ${"--conf" + conf}
+            ${"--nth " + cpu}
+    }
+    output {
+        Array[File] screen_result_images = glob("*.png")
+        Array[File] screen_result_webpage = glob("*.html")
+        Array[File] screen_result_text = glob("*.txt")
     }
     runtime {
         cpu : cpu
