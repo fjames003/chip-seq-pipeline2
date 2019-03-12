@@ -47,9 +47,8 @@ def screen_fastqs(fastqs, nth, conf, out_dir):
     cmd =  'fastq_screen --threads {} '
     cmd += '--conf {} '
     cmd += '--aligner bowtie2 '
-    cmd += '--outdir {} '
     cmd += '{}'
-    cmd = cmd.format(nth, conf, out_dir," ".join(fastqs))
+    cmd = cmd.format(nth, conf, " ".join(fastqs))
 
     run_shell_cmd(cmd)
 
