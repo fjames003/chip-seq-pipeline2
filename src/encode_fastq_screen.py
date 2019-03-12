@@ -49,7 +49,7 @@ def screen_fastqs(fastqs, nth, conf, out_dir):
     cmd += '--aligner bowtie2 '
     cmd += '--outdir {} '
     cmd += '{}'
-    cmd = cmd.format(nth, conf, " ".join(fastqs))
+    cmd = cmd.format(nth, conf, out_dir," ".join(fastqs))
 
     run_shell_cmd(cmd)
 
