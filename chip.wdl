@@ -1094,7 +1094,7 @@ task fastq_screen { # merge trimmed fastqs
         python $(which encode_fastq_screen.py) \
             ${sep=' ' fastqs} \
             ${if paired_end then "--paired-end" else ""} \
-            ${"--conf" + conf} \
+            ${"--conf " + conf} \
             ${"--nth " + cpu}
     }
     output {
