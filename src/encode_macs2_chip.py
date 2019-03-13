@@ -71,6 +71,9 @@ def macs2(ta, ctl_ta, chrsz, gensz, pval_thresh, shift, fraglen, cap_num_peak,
     fc_bedgraph_srt = '{}.fc.signal.srt.bedgraph'.format(prefix)
     pval_bedgraph = '{}.pval.signal.bedgraph'.format(prefix)
     pval_bedgraph_srt = '{}.pval.signal.srt.bedgraph'.format(prefix)
+    # Additions for coverage bigwig
+    cov_bedgraph = '{}.cov.bedgraph'.format(prefix)
+    cov_bigwig = '{}.cov.bigwig'
 
     temp_files = []
 
@@ -173,6 +176,15 @@ def macs2(ta, ctl_ta, chrsz, gensz, pval_thresh, shift, fraglen, cap_num_peak,
             chrsz,
             pval_bigwig)
         run_shell_cmd(cmd10)
+
+        cmd11 = 'bedtools genomecov -g {} -i {} -bg | '
+        cmd11 += 'LC_COLLATE=C sort -k1,1 -k2,2n > {}'
+        cmd11 = cmd11.format(chrsz, ta, cov_bedgraph)
+        run_shell_cmd(cmd11)
+
+        cmd12 = 'bedGraphToBigWig {} {} {}'
+        cmd12 = cmd12.format(cov_bedgraph, chrsz, cov_bigwig)
+        run_shell_cmd(cmd12)
     else:
         # make empty signal bigwigs (WDL wants it in output{})
         fc_bigwig = '/dev/null'
@@ -180,11 +192,12 @@ def macs2(ta, ctl_ta, chrsz, gensz, pval_thresh, shift, fraglen, cap_num_peak,
 
     # remove temporary files
     temp_files.extend([fc_bedgraph,fc_bedgraph_srt,
-                        pval_bedgraph,pval_bedgraph_srt])
+                        pval_bedgraph,pval_bedgraph_srt,
+                        cov_bedgraph])
     temp_files.append("{}_*".format(prefix))
     rm_f(temp_files)
 
-    return npeak, fc_bigwig, pval_bigwig
+    return npeak, fc_bigwig, pval_bigwig, cov_bigwig
 
 def main():
     # read params
@@ -194,7 +207,7 @@ def main():
     mkdir_p(args.out_dir)
 
     log.info('Calling peaks and generating signal tracks with MACS2...')
-    npeak, fc_bigwig, pval_bigwig = macs2(
+    npeak, fc_bigwig, pval_bigwig, cov_bigwig = macs2(
         args.tas[0], args.tas[1], args.chrsz, args.gensz, args.pval_thresh,
         args.shift, args.fraglen, args.cap_num_peak, args.make_signal,
         args.out_dir)
