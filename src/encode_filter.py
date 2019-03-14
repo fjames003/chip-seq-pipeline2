@@ -237,15 +237,17 @@ def pbc_qc_se(bam, mito_chr_name, out_dir):
     prefix = strip_ext(prefix,'dupmark')
     pbc_qc = '{}.pbc.qc'.format(prefix)
 
-    cmd2 = 'bedtools bamtobed -i {} | '
+    cmd2 = 'printf \"Sample_Name\tTotalReadPairs\tDistinctReadPairs\tOneReadPair\tTwoReadPairs\tNRF=Distinct/Total\tPBC1=OnePair/Distinct\tPBC2=OnePair/TwoPair\n\" > {} && '
+    cmd2 += 'bedtools bamtobed -i {} | '
     cmd2 += 'awk \'BEGIN{{OFS="\\t"}}{{print $1,$2,$3,$6}}\' | '
     cmd2 += 'grep -v "^{}\\b" | sort | uniq -c | '
     cmd2 += 'awk \'BEGIN{{mt=0;m0=0;m1=0;m2=0}} ($1==1){{m1=m1+1}} '
     cmd2 += '($1==2){{m2=m2+1}} {{m0=m0+1}} {{mt=mt+$1}} END{{m1_m2=-1.0; '
     cmd2 += 'if(m2>0) m1_m2=m1/m2; m0_mt=0; if (mt>0) m0_mt=m0/mt; m1_m0=0; if (m0>0) m1_m0=m1/m0; '
     cmd2 += 'printf "%d\\t%d\\t%d\\t%d\\t%f\\t%f\\t%f\\n",'
-    cmd2 += 'mt,m0,m1,m2,m0_mt,m1_m0,m1_m2}}\' > {}'
+    cmd2 += 'mt,m0,m1,m2,m0_mt,m1_m0,m1_m2}}\' >> {}'
     cmd2 = cmd2.format(
+        pbc_qc
         bam,
         mito_chr_name,
         pbc_qc)
@@ -259,15 +261,17 @@ def pbc_qc_pe(bam, mito_chr_name, nth, out_dir):
 
     # nmsrt_bam = samtools_name_sort(bam, nth, out_dir)
     nmsrt_bam = sambamba_name_sort(bam, nth, out_dir)
-    cmd3 = 'bedtools bamtobed -bedpe -i {} | '
+    cmd3 = 'printf \"Sample_Name\tTotalReadPairs\tDistinctReadPairs\tOneReadPair\tTwoReadPairs\tNRF=Distinct/Total\tPBC1=OnePair/Distinct\tPBC2=OnePair/TwoPair\n\" > {} && '
+    cmd3 += 'bedtools bamtobed -bedpe -i {} | '
     cmd3 += 'awk \'BEGIN{{OFS="\\t"}}{{print $1,$2,$4,$6,$9,$10}}\' | '
     cmd3 += 'grep -v "^{}\\b" | sort | uniq -c | '
     cmd3 += 'awk \'BEGIN{{mt=0;m0=0;m1=0;m2=0}} ($1==1){{m1=m1+1}} '
     cmd3 += '($1==2){{m2=m2+1}} {{m0=m0+1}} {{mt=mt+$1}} END{{m1_m2=-1.0; '
     cmd3 += 'if(m2>0) m1_m2=m1/m2; m0_mt=0; if (mt>0) m0_mt=m0/mt; m1_m0=0; if (m0>0) m1_m0=m1/m0; '
     cmd3 += 'printf "%d\\t%d\\t%d\\t%d\\t%f\\t%f\\t%f\\n"'
-    cmd3 += ',mt,m0,m1,m2,m0_mt,m1_m0,m1_m2}}\' > {}'
+    cmd3 += ',mt,m0,m1,m2,m0_mt,m1_m0,m1_m2}}\' >> {}'
     cmd3 = cmd3.format(
+        pbc_qc
         nmsrt_bam,
         mito_chr_name,
         pbc_qc)
