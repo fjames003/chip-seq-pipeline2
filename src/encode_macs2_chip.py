@@ -183,7 +183,7 @@ def macs2(ta, ctl_ta, chrsz, gensz, pval_thresh, shift, fraglen, cap_num_peak,
         cmd11 = cmd11.format(ta, cov_ta_srt)
         run_shell_cmd(cmd11)
 
-        cmd12 += 'bedtools genomecov -g {} -i {} -bg > {}'
+        cmd12 = 'bedtools genomecov -g {} -i {} -bg > {}'
         cmd12 = cmd12.format(chrsz, cov_ta_srt, cov_bedgraph)
         run_shell_cmd(cmd12)
 
