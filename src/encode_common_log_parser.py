@@ -244,6 +244,8 @@ def parse_dup_qc(txt):
 def parse_pbc_qc(txt):
     result = OrderedDict()
     with open(txt, 'r') as f:
+        # Get rid of first line. Its a header
+        f.readline()
         for line in f:
             arr = line.strip().split('\t')
             break
