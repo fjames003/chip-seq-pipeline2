@@ -249,6 +249,8 @@ def parse_pbc_qc(txt):
         for line in f:
             arr = line.strip().split('\t')
             break
+    # first thing in array is now sample name
+    arr = arr[1:]
     result['total_read_pairs'] = int(arr[0])
     result['distinct_read_pairs'] = int(arr[1])
     result['one_read_pair'] = int(arr[2])
